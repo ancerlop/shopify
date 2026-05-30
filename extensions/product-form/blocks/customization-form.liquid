@@ -1,0 +1,27 @@
+<div class="escape-room-customization">
+  <h3>Personaliza tu Escape Room</h3>
+  <div id="escape-room-fields" data-product-id="{{ block.settings.product_id }}" data-proxy-prefix="{{ block.settings.app_proxy_prefix }}"></div>
+
+  <script src="{{ 'form.js' | asset_url }}" defer></script>
+  <link rel="stylesheet" href="{{ 'form.css' | asset_url }}">
+</div>
+
+{% schema %}
+{
+  "name": "Escape Room",
+  "target": "section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product_id",
+      "label": "Producto asociado"
+    },
+    {
+      "type": "text",
+      "id": "app_proxy_prefix",
+      "label": "App Proxy prefix",
+      "default": "apps"
+    }
+  ]
+}
+{% endschema %}

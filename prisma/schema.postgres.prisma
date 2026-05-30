@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model Store {
+  id              String   @id @default(cuid())
+  myshopifyDomain String   @unique
+  accessToken     String
+  createdAt       DateTime @default(now())
+  products        Product[]
+  settings        StoreSettings?
+  orders          Order[]
+}
+
+model Product {
+  id        String      @id @default(cuid())
+  storeId   String
+  store     Store       @relation(fields: [storeId], references: [id])
+  shopifyId String
+  fields    FormField[]
+  createdAt DateTime    @default(now())
+
+  @@unique([storeId, shopifyId])
+}
+
+model FormField {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  label     String
+  type      String
+  required  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@unique([productId, label])
+}
+
+model StoreSettings {
+  id           String @id @default(cuid())
+  storeId      String @unique
+  store        Store  @relation(fields: [storeId], references: [id])
+  pdfTemplate  String?
+  emailFrom    String?
+  emailSubject String?
+  emailBody    String?
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  shopifyOrderId String   @unique
+  storeId        String
+  store          Store    @relation(fields: [storeId], references: [id])
+  pdfUrl         String?
+  emailSent      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}

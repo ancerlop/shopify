@@ -1,0 +1,60 @@
+.escape-room-customization {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.escape-room-customization h3 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.escape-room-field {
+  margin-bottom: 1rem;
+}
+
+.escape-room-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.escape-room-field input,
+.escape-room-field textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.escape-room-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.escape-room-field input[type="file"] {
+  padding: 0.4rem;
+}
+
+.escape-room-field .file-name {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
+
+.escape-room-field .error {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.escape-room-preview {
+  max-width: 200px;
+  margin-top: 0.5rem;
+  border-radius: 4px;
+}

@@ -1,0 +1,5 @@
+type = "theme"
+name = "Personalización Escape Room"
+description = "Añade campos personalizables al producto"
+handle = "customization-form"
+uid = "8869626b-023d-2b8a-f5c3-86c9166b7ed7a0951512"
