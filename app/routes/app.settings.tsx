@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, Form, useActionData } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
@@ -181,6 +181,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Settings() {
   const data = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const actionData = useActionData<typeof action>();
   const shopify = useAppBridge();
 
   const [pdfBase64, setPdfBase64] = useState<string>("");
@@ -195,11 +196,21 @@ export default function Settings() {
   }, [data.settings]);
 
   useEffect(() => {
-    if (fetcher.data) {
+    if (actionData && typeof actionData === "object") {
+      if ("error" in actionData) {
+        shopify.toast.show(actionData.error, { isError: true });
+      } else if ("ok" in actionData && actionData.ok) {
+        shopify.toast.show("Configuración guardada");
+      }
+    }
+  }, [actionData, shopify]);
+
+  useEffect(() => {
+    if (fetcher.data && typeof fetcher.data === "object") {
       if ("error" in fetcher.data) {
         shopify.toast.show(fetcher.data.error, { isError: true });
-      } else if (fetcher.data.ok) {
-        shopify.toast.show("Configuración guardada");
+      } else if ("ok" in fetcher.data && fetcher.data.ok) {
+        shopify.toast.show("Plantilla eliminada");
       }
     }
   }, [fetcher.data, shopify]);
@@ -268,7 +279,7 @@ export default function Settings() {
         ))}
       </datalist>
 
-      <fetcher.Form method="post">
+      <Form method="post">
         <input type="hidden" name="pdfFileBase64" value={pdfBase64} />
         <input type="hidden" name="pdfFileName" value={pdfName} />
         <input type="hidden" name="mappingsJson" value={JSON.stringify(mappings)} />
@@ -558,7 +569,7 @@ export default function Settings() {
             Guardar configuración
           </button>
         </s-stack>
-      </fetcher.Form>
+      </Form>
     </s-page>
   );
 }
