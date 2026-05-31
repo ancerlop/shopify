@@ -83,6 +83,7 @@ model PdfFieldMapping {
   y          Float
   fontSize   Float         @default(14)
   fontColor  String        @default("#000000")
+  fontFamily String        @default("Helvetica")
   maxWidth   Float?
   page       Int           @default(0)
 

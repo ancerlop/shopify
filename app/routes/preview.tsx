@@ -33,6 +33,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       y: Number(m.y) || 0,
       fontSize: Number(m.fontSize) || 12,
       fontColor: m.fontColor || "#000000",
+      fontFamily: m.fontFamily || "Helvetica",
       maxWidth: m.maxWidth ? Number(m.maxWidth) : null,
       page: Number(m.page) || 0,
     }));

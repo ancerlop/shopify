@@ -120,13 +120,38 @@ export async function generatePDF(data: PDFData, template?: string): Promise<Buf
   });
 }
 
+const FONT_MAP: Record<string, StandardFonts> = {
+  "Helvetica": StandardFonts.Helvetica,
+  "Helvetica-Bold": StandardFonts.HelveticaBold,
+  "Helvetica-Oblique": StandardFonts.HelveticaOblique,
+  "Helvetica-BoldOblique": StandardFonts.HelveticaBoldOblique,
+  "Courier": StandardFonts.Courier,
+  "Courier-Bold": StandardFonts.CourierBold,
+  "Courier-Oblique": StandardFonts.CourierOblique,
+  "Courier-BoldOblique": StandardFonts.CourierBoldOblique,
+  "Times-Roman": StandardFonts.TimesRoman,
+  "Times-Bold": StandardFonts.TimesRomanBold,
+  "Times-Italic": StandardFonts.TimesRomanItalic,
+  "Times-BoldItalic": StandardFonts.TimesRomanBoldItalic,
+};
+
 export async function generatePDFFromTemplate(
   templateBytes: Uint8Array,
   fields: { label: string; value: string }[],
-  mappings: PdfFieldMapping[]
+  mappings: (PdfFieldMapping & { fontFamily?: string })[]
 ): Promise<Buffer> {
   const pdfDoc = await PdfLibDocument.load(templateBytes);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Pre-embed all distinct fonts needed
+  const fontCache: Record<string, any> = {};
+  async function getFont(family: string) {
+    const key = family || "Helvetica";
+    if (!fontCache[key]) {
+      const stdFont = FONT_MAP[key] ?? StandardFonts.Helvetica;
+      fontCache[key] = await pdfDoc.embedFont(stdFont);
+    }
+    return fontCache[key];
+  }
 
   for (const mapping of mappings) {
     const field = fields.find(
@@ -165,6 +190,7 @@ export async function generatePDFFromTemplate(
       }
     } else {
       const [r, g, b] = hexToRgb(mapping.fontColor || "#000000");
+      const font = await getFont((mapping as any).fontFamily || "Helvetica");
       page.drawText(field.value, {
         x: mapping.x,
         y: mapping.y,
@@ -180,3 +206,4 @@ export async function generatePDFFromTemplate(
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
 }
+
