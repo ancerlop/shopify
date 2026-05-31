@@ -9,7 +9,7 @@ ENV NODE_ENV=production
 
 # Install all dependencies (including devDependencies needed for build)
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install
 
 COPY . .
 

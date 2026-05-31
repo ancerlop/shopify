@@ -1,6 +1,6 @@
 client_id = "87279fa581c1631296fb69507c75082e"
 name = "PDForge"
-application_url = "https://shopify.app"
+application_url = "https://shopify-production-1e77.up.railway.app"
 embedded = true
 
 [build]
@@ -39,8 +39,8 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "https://admin.shopify.com/store/ancerlop/apps/87279fa581c1631296fb69507c75082e/auth/callback",
+  "https://shopify-production-1e77.up.railway.app/auth/callback",
+  "https://shopify-production-1e77.up.railway.app/auth/shopify/callback",
 ]
 
 [app_proxy]
