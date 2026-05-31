@@ -1,6 +1,6 @@
 client_id = "87279fa581c1631296fb69507c75082e"
 name = "PDForge"
-application_url = "https://shopify-production-1e77.up.railway.app"
+application_url = "https://shopify-production-9645.up.railway.app"
 embedded = true
 
 [build]
@@ -39,19 +39,12 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://shopify-production-1e77.up.railway.app/auth/callback",
-  "https://shopify-production-1e77.up.railway.app/auth/shopify/callback",
+  "https://shopify-production-9645.up.railway.app/auth/callback",
+  "https://shopify-production-9645.up.railway.app/auth/shopify/callback",
 ]
 
 [app_proxy]
-url = "/apps"
+url = "https://shopify-production-9645.up.railway.app/apps"
 subpath = "escape-room"
 prefix = "apps"
 
-  [[app_proxy.proxies]]
-  prefix = "apps"
-  sub_path_prefix = "/form-config"
-
-  [[app_proxy.proxies]]
-  prefix = "apps"
-  sub_path_prefix = "/upload"
