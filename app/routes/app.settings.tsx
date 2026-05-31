@@ -32,8 +32,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const uniqueLabels = fields.map((f) => f.label);
 
+  const settingsData = store?.settings
+    ? {
+        id: store.settings.id,
+        storeId: store.settings.storeId,
+        pdfTemplate: store.settings.pdfTemplate,
+        pdfTemplateName: store.settings.pdfTemplateName,
+        emailFrom: store.settings.emailFrom,
+        emailSubject: store.settings.emailSubject,
+        emailBody: store.settings.emailBody,
+        fieldMappings: store.settings.fieldMappings,
+        pdfTemplateFileBase64: store.settings.pdfTemplateFile
+          ? store.settings.pdfTemplateFile.toString("base64")
+          : null,
+      }
+    : null;
+
   return {
-    settings: store?.settings || null,
+    settings: settingsData,
     uniqueLabels,
   };
 };
@@ -244,13 +260,21 @@ export default function Settings() {
   const handlePreview = (e: React.MouseEvent) => {
     e.preventDefault();
 
+    const currentPdfBase64 = pdfBase64 || (data.settings?.pdfTemplateFileBase64 ? `data:application/pdf;base64,${data.settings.pdfTemplateFileBase64}` : "");
+
+    if (!currentPdfBase64) {
+      shopify.toast.show("Por favor, sube una plantilla PDF primero.", { isError: true });
+      return;
+    }
+
     const tempForm = document.createElement("form");
     tempForm.method = "POST";
+    tempForm.action = "/preview";
     tempForm.target = "_blank";
 
     const inputs = {
       intent: "preview",
-      pdfFileBase64: pdfBase64,
+      pdfFileBase64: currentPdfBase64,
       pdfFileName: pdfName,
       mappingsJson: JSON.stringify(mappings),
     };

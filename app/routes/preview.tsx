@@ -1,0 +1,52 @@
+import type { ActionFunctionArgs } from "react-router";
+import { generatePDFFromTemplate } from "../utils/pdf.server";
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    const form = await request.formData();
+    const pdfBase64 = form.get("pdfFileBase64") as string;
+    const pdfName = form.get("pdfFileName") as string;
+    const mappingsJson = form.get("mappingsJson") as string;
+
+    let mappings = [];
+    try {
+      mappings = JSON.parse(mappingsJson || "[]");
+    } catch (e) {}
+
+    if (!pdfBase64) {
+      return new Response("No PDF template provided", { status: 400 });
+    }
+
+    const base64Data = pdfBase64.replace(/^data:application\/pdf;base64,/, "");
+    const pdfBytes = Buffer.from(base64Data, "base64");
+
+    const mockFields = mappings.map((m: any) => ({
+      label: m.fieldLabel,
+      value: `[${m.fieldLabel}]`,
+    }));
+
+    const prismaMappings = mappings.map((m: any) => ({
+      id: m.id || "",
+      settingsId: "",
+      fieldLabel: m.fieldLabel,
+      x: Number(m.x) || 0,
+      y: Number(m.y) || 0,
+      fontSize: Number(m.fontSize) || 12,
+      fontColor: m.fontColor || "#000000",
+      maxWidth: m.maxWidth ? Number(m.maxWidth) : null,
+      page: Number(m.page) || 0,
+    }));
+
+    const previewBuffer = await generatePDFFromTemplate(pdfBytes, mockFields, prismaMappings);
+
+    return new Response(previewBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="preview-${pdfName || "template"}.pdf"`,
+      },
+    });
+  } catch (err: any) {
+    console.error("[preview-action] Error:", err);
+    return new Response("Error generating preview: " + err.message, { status: 500 });
+  }
+};
