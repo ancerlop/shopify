@@ -62,13 +62,31 @@ model FormField {
 }
 
 model StoreSettings {
-  id           String @id @default(cuid())
-  storeId      String @unique
-  store        Store  @relation(fields: [storeId], references: [id])
-  pdfTemplate  String?
-  emailFrom    String?
-  emailSubject String?
-  emailBody    String?
+  id              String            @id @default(cuid())
+  storeId         String            @unique
+  store           Store             @relation(fields: [storeId], references: [id])
+  pdfTemplate     String?
+  pdfTemplateFile Bytes?
+  pdfTemplateName String?
+  emailFrom       String?
+  emailSubject    String?
+  emailBody       String?
+  fieldMappings   PdfFieldMapping[]
+}
+
+model PdfFieldMapping {
+  id         String        @id @default(cuid())
+  settingsId String
+  settings   StoreSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+  fieldLabel String
+  x          Float
+  y          Float
+  fontSize   Float         @default(14)
+  fontColor  String        @default("#000000")
+  maxWidth   Float?
+  page       Int           @default(0)
+
+  @@unique([settingsId, fieldLabel])
 }
 
 model Order {

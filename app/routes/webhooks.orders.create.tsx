@@ -76,10 +76,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const imageField = fields.find((f) => f.value.startsWith("https://") || f.value.startsWith("/uploads/"));
       console.log(`[orders-webhook] Generating PDF. Custom image value: ${imageField?.value || "None"}`);
 
-      const pdfBuffer = await generatePDF(
-        { fields, imageUrl: imageField?.value },
-        settings?.pdfTemplate || undefined
-      );
+      let pdfBuffer: Buffer;
+      if (settings?.pdfTemplateFile) {
+        const { generatePDFFromTemplate } = await import("../utils/pdf.server");
+        const mappings = await db.pdfFieldMapping.findMany({
+          where: { settingsId: settings.id },
+        });
+        pdfBuffer = await generatePDFFromTemplate(
+          settings.pdfTemplateFile,
+          fields,
+          mappings
+        );
+      } else {
+        pdfBuffer = await generatePDF(
+          { fields, imageUrl: imageField?.value },
+          settings?.pdfTemplate || undefined
+        );
+      }
 
       let emailSent = false;
       try {

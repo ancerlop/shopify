@@ -1,11 +1,13 @@
 import PDFDocument from "pdfkit";
+import { PDFDocument as PdfLibDocument, rgb, StandardFonts } from "pdf-lib";
+import type { PdfFieldMapping } from "@prisma/client";
+import { join } from "path";
+import { readFileSync } from "fs";
 
 export interface PDFData {
   fields: { label: string; value: string }[];
   imageUrl?: string;
 }
-
-import { join } from "path";
 
 function isHttpUrl(value: string): boolean {
   return value.startsWith("http://") || value.startsWith("https://");
@@ -24,6 +26,34 @@ function getImagePath(value: string): string {
     return join(process.cwd(), "public", value);
   }
   return value;
+}
+
+async function getImageBytes(value: string): Promise<Buffer | null> {
+  try {
+    if (isLocalUpload(value)) {
+      const filePath = getImagePath(value);
+      return readFileSync(filePath);
+    } else if (isHttpUrl(value)) {
+      const res = await fetch(value);
+      const arrayBuffer = await res.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+  } catch (error) {
+    console.error("Error loading image bytes:", error);
+  }
+  return null;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  let cleanHex = hex.replace(/^#/, "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map((c) => c + c).join("");
+  }
+  const num = parseInt(cleanHex, 16);
+  const r = ((num >> 16) & 255) / 255;
+  const g = ((num >> 8) & 255) / 255;
+  const b = (num & 255) / 255;
+  return [r, g, b];
 }
 
 function embedImage(doc: PDFDocument, value: string): Promise<void> {
@@ -88,4 +118,65 @@ export async function generatePDF(data: PDFData, template?: string): Promise<Buf
 
     doc.end();
   });
+}
+
+export async function generatePDFFromTemplate(
+  templateBytes: Uint8Array,
+  fields: { label: string; value: string }[],
+  mappings: PdfFieldMapping[]
+): Promise<Buffer> {
+  const pdfDoc = await PdfLibDocument.load(templateBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  for (const mapping of mappings) {
+    const field = fields.find(
+      (f) => f.label.toLowerCase() === mapping.fieldLabel.toLowerCase()
+    );
+    if (!field || !field.value) continue;
+
+    const pages = pdfDoc.getPages();
+    const pageIndex = mapping.page;
+    if (pageIndex < 0 || pageIndex >= pages.length) continue;
+
+    const page = pages[pageIndex];
+
+    if (isImageUrl(field.value)) {
+      const imgBytes = await getImageBytes(field.value);
+      if (imgBytes) {
+        try {
+          let embeddedImage;
+          const lowerVal = field.value.toLowerCase();
+          if (lowerVal.endsWith(".png")) {
+            embeddedImage = await pdfDoc.embedPng(imgBytes);
+          } else {
+            embeddedImage = await pdfDoc.embedJpg(imgBytes);
+          }
+          const width = mapping.maxWidth || 150;
+          const height = mapping.maxWidth ? (width * 0.75) : 150;
+          page.drawImage(embeddedImage, {
+            x: mapping.x,
+            y: mapping.y,
+            width,
+            height,
+          });
+        } catch (imgErr) {
+          console.error("Error embedding image in PDF:", imgErr);
+        }
+      }
+    } else {
+      const [r, g, b] = hexToRgb(mapping.fontColor || "#000000");
+      page.drawText(field.value, {
+        x: mapping.x,
+        y: mapping.y,
+        size: mapping.fontSize,
+        font,
+        color: rgb(r, g, b),
+        maxWidth: mapping.maxWidth || undefined,
+        lineHeight: mapping.fontSize * 1.2,
+      });
+    }
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
