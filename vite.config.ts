@@ -43,6 +43,9 @@ export default defineConfig({
     },
     port: Number(process.env.PORT || 3000),
     hmr: hmrConfig,
+    watch: {
+      ignored: ["**/public/uploads/**"],
+    },
     fs: {
       // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
       allow: ["app", "node_modules"],

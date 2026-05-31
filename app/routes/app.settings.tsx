@@ -94,7 +94,23 @@ export default function Settings() {
             />
           </s-section>
 
-          <s-button>Guardar configuración</s-button>
+          <button
+            type="submit"
+            style={{
+              padding: "8px 16px",
+              fontSize: "14px",
+              fontWeight: "500",
+              borderRadius: "6px",
+              border: "1px solid #babfc3",
+              backgroundColor: "#008060",
+              color: "#ffffff",
+              cursor: "pointer",
+              boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+              width: "fit-content",
+            }}
+          >
+            Guardar configuración
+          </button>
         </s-stack>
       </fetcher.Form>
     </s-page>

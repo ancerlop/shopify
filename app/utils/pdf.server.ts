@@ -5,26 +5,35 @@ export interface PDFData {
   imageUrl?: string;
 }
 
-function isDataUrl(value: string): boolean {
-  return value.startsWith("data:");
-}
+import { join } from "path";
 
 function isHttpUrl(value: string): boolean {
   return value.startsWith("http://") || value.startsWith("https://");
 }
 
+function isLocalUpload(value: string): boolean {
+  return value.startsWith("/uploads/");
+}
+
+function isImageUrl(value: string): boolean {
+  return isHttpUrl(value) || isLocalUpload(value);
+}
+
+function getImagePath(value: string): string {
+  if (isLocalUpload(value)) {
+    return join(process.cwd(), "public", value);
+  }
+  return value;
+}
+
 function embedImage(doc: PDFDocument, value: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (isHttpUrl(value)) {
-      doc.image(value, { fit: [400, 300], align: "center", valign: "center" });
+    try {
+      const pathOrUrl = getImagePath(value);
+      doc.image(pathOrUrl, { fit: [400, 300], align: "center", valign: "center" });
       resolve();
-    } else if (isDataUrl(value)) {
-      const base64 = value.split(",")[1];
-      if (!base64) return resolve();
-      const buf = Buffer.from(base64, "base64");
-      doc.image(buf, { fit: [400, 300], align: "center", valign: "center" });
-      resolve();
-    } else {
+    } catch (err) {
+      console.error("[pdf-embed] Error embedding image:", err);
       resolve();
     }
   });
@@ -50,7 +59,7 @@ export async function generatePDF(data: PDFData, template?: string): Promise<Buf
 
       doc.fontSize(12).text(styled, 50, 50, { width: 500 });
 
-      if (data.imageUrl && (isHttpUrl(data.imageUrl) || isDataUrl(data.imageUrl))) {
+      if (data.imageUrl && isImageUrl(data.imageUrl)) {
         doc.moveDown();
         await embedImage(doc, data.imageUrl);
       }
@@ -59,7 +68,7 @@ export async function generatePDF(data: PDFData, template?: string): Promise<Buf
       doc.moveDown(2);
 
       for (const field of data.fields) {
-        if (isDataUrl(field.value)) {
+        if (isImageUrl(field.value)) {
           doc.fontSize(14).text(`${field.label}:`, { continued: false });
           doc.moveDown(0.3);
           await embedImage(doc, field.value);
@@ -71,7 +80,7 @@ export async function generatePDF(data: PDFData, template?: string): Promise<Buf
         }
       }
 
-      if (data.imageUrl && !data.fields.some((f) => f.value === data.imageUrl)) {
+      if (data.imageUrl && isImageUrl(data.imageUrl) && !data.fields.some((f) => f.value === data.imageUrl)) {
         doc.moveDown();
         await embedImage(doc, data.imageUrl);
       }

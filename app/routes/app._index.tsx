@@ -27,41 +27,59 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       nodes { id title handle }
     }
   }`);
-  const { data } = await shopifyRes.json();
-  const shopifyProducts = data?.products?.nodes || [];
+  const jsonRes = await shopifyRes.json();
+  console.log("shopifyProducts query response:", JSON.stringify(jsonRes));
+  const shopifyProducts = jsonRes.data?.products?.nodes || [];
 
   return { store, products, shopifyProducts };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const form = await request.formData();
-  const intent = form.get("intent");
+  try {
+    const { session } = await authenticate.admin(request);
+    const form = await request.formData();
+    const intent = form.get("intent");
+    console.log(`[index-action] Intent received: ${intent}, shop: ${session.shop}`);
 
-  if (intent === "add-product") {
-    const shopifyId = form.get("shopifyId") as string;
-    const store = await db.store.findUnique({ where: { myshopifyDomain: session.shop } });
-    if (!store) return { error: "Store not found" };
+    if (intent === "add-product") {
+      const shopifyId = form.get("shopifyId") as string;
+      console.log(`[index-action] Adding product shopifyId: ${shopifyId}`);
+      if (!shopifyId) {
+        console.warn("[index-action] shopifyId is empty!");
+        return { error: "No product selected" };
+      }
 
-    await db.product.create({
-      data: { storeId: store.id, shopifyId },
-    });
+      const store = await db.store.findUnique({ where: { myshopifyDomain: session.shop } });
+      if (!store) {
+        console.error(`[index-action] Store not found for ${session.shop}`);
+        return { error: "Store not found" };
+      }
+
+      const newProduct = await db.product.create({
+        data: { storeId: store.id, shopifyId },
+      });
+      console.log(`[index-action] Product successfully created: ${JSON.stringify(newProduct)}`);
+    }
+
+    if (intent === "remove-product") {
+      const productId = form.get("productId") as string;
+      console.log(`[index-action] Removing product database ID: ${productId}`);
+      await db.formField.deleteMany({ where: { productId } });
+      await db.product.delete({ where: { id: productId } });
+      console.log(`[index-action] Product successfully deleted`);
+    }
+
+    return { ok: true };
+  } catch (error: any) {
+    console.error("[index-action] Error in action:", error);
+    return { error: error.message || String(error) };
   }
-
-  if (intent === "remove-product") {
-    const productId = form.get("productId") as string;
-    await db.formField.deleteMany({ where: { productId } });
-    await db.product.delete({ where: { id: productId } });
-  }
-
-  return { ok: true };
 };
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
-  const [selected, setSelected] = useState("");
 
   const configuredIds = new Set(data.products.map((p) => p.shopifyId));
 
@@ -77,62 +95,119 @@ export default function Index() {
         {data.products.length === 0 ? (
           <s-paragraph>Aún no has configurado ningún producto.</s-paragraph>
         ) : (
-          <s-table>
-            <s-table-header>
-              <s-table-row>
-                <s-table-cell>Producto</s-table-cell>
-                <s-table-cell>Campos</s-table-cell>
-                <s-table-cell>Acción</s-table-cell>
-              </s-table-row>
-            </s-table-header>
-            {data.products.map((p: any) => {
-              const sp = data.shopifyProducts.find((sp: any) => sp.id === p.shopifyId);
-              return (
-                <s-table-row key={p.id}>
-                  <s-table-cell>
-                    <s-link href={`/app/products/${p.id}`}>
-                      {sp?.title || `Producto #${p.shopifyId}`}
-                    </s-link>
-                  </s-table-cell>
-                  <s-table-cell>{p.fields.length} campos</s-table-cell>
-                  <s-table-cell>
-                    <fetcher.Form method="post">
-                      <input type="hidden" name="intent" value="remove-product" />
-                      <input type="hidden" name="productId" value={p.id} />
-                      <s-button variant="tertiary" tone="critical">
-                        Eliminar
-                      </s-button>
-                    </fetcher.Form>
-                  </s-table-cell>
-                </s-table-row>
-              );
-            })}
-          </s-table>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "16px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #e1e3e5", textAlign: "left" }}>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Producto</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Campos</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.products.map((p: any) => {
+                const sp = data.shopifyProducts.find((sp: any) => sp.id === p.shopifyId);
+                return (
+                  <tr key={p.id} style={{ borderBottom: "1px solid #e1e3e5" }}>
+                    <td style={{ padding: "12px", fontSize: "14px" }}>
+                      <s-link href={`/app/products/${p.id}`}>
+                        {sp?.title || `Producto #${p.shopifyId}`}
+                      </s-link>
+                    </td>
+                    <td style={{ padding: "12px", fontSize: "14px", color: "#6d7175" }}>
+                      {p.fields.length} campos
+                    </td>
+                    <td style={{ padding: "12px" }}>
+                      <fetcher.Form method="post">
+                        <input type="hidden" name="intent" value="remove-product" />
+                        <input type="hidden" name="productId" value={p.id} />
+                        <button
+                          type="submit"
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            borderRadius: "4px",
+                            border: "1px solid #babfc3",
+                            backgroundColor: "#ffffff",
+                            color: "#d72c0d",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </fetcher.Form>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </s-section>
 
       <s-section heading="Añadir producto">
-        <s-stack direction="inline" gap="base">
-          <s-select
-            label="Seleccionar producto"
-            value={selected}
-            onChange={(e: any) => setSelected(e.target.value)}
-          >
-            <option value="">-- Seleccionar --</option>
-            {data.shopifyProducts
-              .filter((sp: any) => !configuredIds.has(sp.id))
-              .map((sp: any) => (
-                <option key={sp.id} value={sp.id}>
-                  {sp.title}
-                </option>
-              ))}
-          </s-select>
+        {data.shopifyProducts.length === 0 ? (
+          <s-paragraph>
+            No se encontraron productos en tu tienda. Ve a{" "}
+            <s-link href="https://ancerlop.myshopify.com/admin/products" target="_blank">
+              Productos en tu panel de Shopify
+            </s-link>{" "}
+            para crear uno primero.
+          </s-paragraph>
+        ) : (
           <fetcher.Form method="post">
             <input type="hidden" name="intent" value="add-product" />
-            <input type="hidden" name="shopifyId" value={selected} />
-            <s-button disabled={!selected}>Añadir</s-button>
+            <s-stack direction="inline" alignment="end" gap="base">
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: "500", color: "#202223" }}>
+                  Seleccionar producto
+                </label>
+                <select
+                  name="shopifyId"
+                  required
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "14px",
+                    borderRadius: "6px",
+                    border: "1px solid #babfc3",
+                    backgroundColor: "#ffffff",
+                    minWidth: "280px",
+                    height: "36px",
+                    color: "#202223",
+                    boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                  }}
+                >
+                  <option value="">-- Seleccionar --</option>
+                  {data.shopifyProducts
+                    .filter((sp: any) => !configuredIds.has(sp.id))
+                    .map((sp: any) => (
+                      <option key={sp.id} value={sp.id}>
+                        {sp.title}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                style={{
+                  padding: "0 16px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  borderRadius: "6px",
+                  border: "1px solid #babfc3",
+                  backgroundColor: "#008060",
+                  color: "#ffffff",
+                  cursor: "pointer",
+                  height: "36px",
+                  boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                }}
+              >
+                Añadir
+              </button>
+            </s-stack>
           </fetcher.Form>
-        </s-stack>
+        )}
       </s-section>
     </s-page>
   );

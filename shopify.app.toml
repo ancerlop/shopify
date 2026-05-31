@@ -1,48 +1,52 @@
-name = "Escape Room Personalizador"
 client_id = "87279fa581c1631296fb69507c75082e"
+name = "PDForge"
 application_url = "https://shopify.app"
 embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-04"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/data_request"
+  compliance_topics = [ "customers/data_request" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/redact"
+  compliance_topics = [ "customers/redact" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/shop/redact"
+  compliance_topics = [ "shop/redact" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/orders/create"
+  topics = [ "orders/create" ]
+
+[access_scopes]
+scopes = "write_products,write_orders,read_orders"
+use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
   "http://localhost:3000/auth/callback",
-  "https://shopify.app/auth/callback",
+  "https://admin.shopify.com/store/ancerlop/apps/87279fa581c1631296fb69507c75082e/auth/callback",
 ]
-
-[access_scopes]
-scopes = "write_products,write_orders,read_orders"
-
-[webhooks]
-api_version = "2025-10"
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/app/uninstalled"
-  topics = ["app/uninstalled"]
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/orders/create"
-  topics = ["orders/create"]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/customers/data_request"
-  compliance_topics = ["customers/data_request"]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/customers/redact"
-  compliance_topics = ["customers/redact"]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/shop/redact"
-  compliance_topics = ["shop/redact"]
 
 [app_proxy]
 url = "/apps"
-prefix = "apps"
 subpath = "escape-room"
+prefix = "apps"
 
   [[app_proxy.proxies]]
   prefix = "apps"
@@ -51,6 +55,3 @@ subpath = "escape-room"
   [[app_proxy.proxies]]
   prefix = "apps"
   sub_path_prefix = "/upload"
-
-[build]
-automatically_update_urls_on_dev = true

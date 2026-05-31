@@ -98,34 +98,51 @@ export default function ProductConfig() {
         {data.product.fields.length === 0 ? (
           <s-paragraph>No hay campos configurados. Añade el primero.</s-paragraph>
         ) : (
-          <s-table>
-            <s-table-header>
-              <s-table-row>
-                <s-table-cell>Campo</s-table-cell>
-                <s-table-cell>Tipo</s-table-cell>
-                <s-table-cell>Obligatorio</s-table-cell>
-                <s-table-cell>Orden</s-table-cell>
-                <s-table-cell>Acción</s-table-cell>
-              </s-table-row>
-            </s-table-header>
-            {data.product.fields.map((f: any) => (
-              <s-table-row key={f.id}>
-                <s-table-cell>{f.label}</s-table-cell>
-                <s-table-cell>{FIELD_TYPES.find((t) => t.value === f.type)?.label || f.type}</s-table-cell>
-                <s-table-cell>{f.required ? "Sí" : "No"}</s-table-cell>
-                <s-table-cell>{f.sortOrder}</s-table-cell>
-                <s-table-cell>
-                  <fetcher.Form method="post">
-                    <input type="hidden" name="intent" value="remove-field" />
-                    <input type="hidden" name="fieldId" value={f.id} />
-                    <s-button variant="tertiary" tone="critical">
-                      Eliminar
-                    </s-button>
-                  </fetcher.Form>
-                </s-table-cell>
-              </s-table-row>
-            ))}
-          </s-table>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "16px" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #e1e3e5", textAlign: "left" }}>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Campo</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Tipo</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Obligatorio</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Orden</th>
+                <th style={{ padding: "12px", color: "#202223", fontWeight: "600", fontSize: "13px" }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.product.fields.map((f: any) => (
+                <tr key={f.id} style={{ borderBottom: "1px solid #e1e3e5" }}>
+                  <td style={{ padding: "12px", fontSize: "14px" }}>{f.label}</td>
+                  <td style={{ padding: "12px", fontSize: "14px", color: "#6d7175" }}>
+                    {FIELD_TYPES.find((t) => t.value === f.type)?.label || f.type}
+                  </td>
+                  <td style={{ padding: "12px", fontSize: "14px" }}>{f.required ? "Sí" : "No"}</td>
+                  <td style={{ padding: "12px", fontSize: "14px" }}>{f.sortOrder}</td>
+                  <td style={{ padding: "12px" }}>
+                    <fetcher.Form method="post">
+                      <input type="hidden" name="intent" value="remove-field" />
+                      <input type="hidden" name="fieldId" value={f.id} />
+                      <button
+                        type="submit"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          borderRadius: "4px",
+                          border: "1px solid #babfc3",
+                          backgroundColor: "#ffffff",
+                          color: "#d72c0d",
+                          cursor: "pointer",
+                          boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    </fetcher.Form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </s-section>
 
@@ -139,18 +156,53 @@ export default function ProductConfig() {
               placeholder="Ej: Nombre de la víctima"
               required
             />
-            <s-select label="Tipo de campo" name="type" required>
-              {FIELD_TYPES.map((t: any) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </s-select>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "500", color: "#202223" }}>
+                Tipo de campo
+              </label>
+              <select
+                name="type"
+                required
+                style={{
+                  padding: "6px 12px",
+                  fontSize: "14px",
+                  borderRadius: "6px",
+                  border: "1px solid #babfc3",
+                  backgroundColor: "#ffffff",
+                  height: "36px",
+                  color: "#202223",
+                  boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                  width: "100%",
+                }}
+              >
+                {FIELD_TYPES.map((t: any) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
             <s-checkbox label="Campo obligatorio" name="required" value="true" />
             <s-text-field
               label="Orden"
               name="sortOrder"
               value={String(data.product.fields.length)}
             />
-            <s-button>Añadir campo</s-button>
+            <button
+              type="submit"
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: "500",
+                borderRadius: "6px",
+                border: "1px solid #babfc3",
+                backgroundColor: "#008060",
+                color: "#ffffff",
+                cursor: "pointer",
+                boxShadow: "0 1px 0 0 rgba(22, 29, 37, 0.05)",
+                width: "fit-content",
+              }}
+            >
+              Añadir campo
+            </button>
           </s-stack>
         </fetcher.Form>
       </s-section>
