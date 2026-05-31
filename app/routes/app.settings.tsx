@@ -241,6 +241,33 @@ export default function Settings() {
     }
   };
 
+  const handlePreview = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    const tempForm = document.createElement("form");
+    tempForm.method = "POST";
+    tempForm.target = "_blank";
+
+    const inputs = {
+      intent: "preview",
+      pdfFileBase64: pdfBase64,
+      pdfFileName: pdfName,
+      mappingsJson: JSON.stringify(mappings),
+    };
+
+    for (const [key, value] of Object.entries(inputs)) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      tempForm.appendChild(input);
+    }
+
+    document.body.appendChild(tempForm);
+    tempForm.submit();
+    document.body.removeChild(tempForm);
+  };
+
   const addMapping = () => {
     setMappings([
       ...mappings,
@@ -488,10 +515,8 @@ export default function Settings() {
                     </button>
 
                     <button
-                      type="submit"
-                      name="intent"
-                      value="preview"
-                      formTarget="_blank"
+                      type="button"
+                      onClick={handlePreview}
                       style={{
                         padding: "8px 16px",
                         fontSize: "14px",
