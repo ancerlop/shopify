@@ -123,7 +123,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (pdfBase64) {
       configData.pdfTemplateFile = Buffer.from(
-        pdfBase64.replace(/^data:application\/pdf;base64,/, ""),
+        pdfBase64.replace(/^data:[^;]*;base64,/, ""),
         "base64"
       );
       configData.pdfTemplateName = pdfName || "template.pdf";

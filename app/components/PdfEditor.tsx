@@ -87,7 +87,10 @@ export default function PdfEditor({ pdfBase64, mappings, availableFields, onMapp
       try {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-        const base64Data = pdfBase64.replace(/^data:application\/pdf;base64,/, "");
+        let base64Data = pdfBase64.replace(/^data:[^;]*;base64,/, "");
+        // Limpiar caracteres extraños que puedan romper atob y añadir padding
+        base64Data = base64Data.replace(/[^A-Za-z0-9+/=]/g, "");
+        while (base64Data.length % 4 !== 0) base64Data += "=";
         const binary = atob(base64Data);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
