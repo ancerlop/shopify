@@ -111,7 +111,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   // --- PDF template management ---
   if (intent === "save-pdf") {
-    const pdfBase64 = form.get("pdfFileBase64") as string;
+    const pdfBase64Raw = (form.get("pdfFileBase64") as string) || "";
+    const pdfBase64 = pdfBase64Raw.replace(/ /g, "+"); // Restore '+' characters lost in URL encoding
     const pdfName = form.get("pdfFileName") as string;
     const pdfTemplate = (form.get("pdfTemplate") as string) || "";
     const mappingsJson = form.get("mappingsJson") as string;

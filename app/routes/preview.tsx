@@ -4,7 +4,8 @@ import { generatePDFFromTemplate } from "../utils/pdf.server";
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const form = await request.formData();
-    const pdfBase64 = form.get("pdfFileBase64") as string;
+    const pdfBase64Raw = (form.get("pdfFileBase64") as string) || "";
+    const pdfBase64 = pdfBase64Raw.replace(/ /g, "+");
     const pdfName = form.get("pdfFileName") as string;
     const mappingsJson = form.get("mappingsJson") as string;
 
@@ -17,7 +18,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return new Response("No PDF template provided", { status: 400 });
     }
 
-    const base64Data = pdfBase64.replace(/^data:application\/pdf;base64,/, "");
+    const base64Data = pdfBase64.replace(/^data:[^;]*;base64,/, "");
     const pdfBytes = Buffer.from(base64Data, "base64");
 
     const mockFields = mappings.map((m: any) => ({
