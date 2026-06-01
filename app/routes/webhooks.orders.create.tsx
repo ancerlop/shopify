@@ -30,13 +30,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return new Response("No customer email", { status: 200 });
     }
 
-    const store = await db.store.findUnique({ where: { myshopifyDomain: shop } });
+    const store = await db.store.findUnique({
+      where: { myshopifyDomain: shop },
+      include: { settings: true },
+    });
     if (!store) {
       console.error(`[orders-webhook] Store not found in database for domain: ${shop}`);
       return new Response("Store not found", { status: 200 });
     }
 
-    const settings = await db.storeSettings.findUnique({ where: { storeId: store.id } });
+    const settings = store.settings;
     console.log(`[orders-webhook] Settings found: ${!!settings}. From email: ${settings?.emailFrom || "default"}`);
 
     for (const item of order.line_items || []) {
@@ -54,11 +57,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const product = await db.product.findFirst({
         where: {
           storeId: store.id,
-          shopifyId: {
-            in: [shopifyId, numericId]
-          }
+          shopifyId: { in: [shopifyId, numericId] },
         },
-        include: { fields: true },
+        include: {
+          fields: true,
+          pdfConfig: {
+            include: { fieldMappings: true },
+          },
+        },
       });
 
       if (!product) {
@@ -66,7 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         continue;
       }
 
-      console.log(`[orders-webhook] Match found! Configured product ID: ${product.id} (fields: ${product.fields.length})`);
+      console.log(`[orders-webhook] Match found! Product: ${product.id}, pdfConfig: ${!!product.pdfConfig}, fields: ${product.fields.length}`);
 
       const fields = item.properties.map((p) => ({
         label: p.name,
@@ -77,20 +83,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.log(`[orders-webhook] Generating PDF. Custom image value: ${imageField?.value || "None"}`);
 
       let pdfBuffer: Buffer;
-      if (settings?.pdfTemplateFile) {
+
+      if (product.pdfConfig?.pdfTemplateFile) {
+        // Use per-product PDF template with field mappings
         const { generatePDFFromTemplate } = await import("../utils/pdf.server");
-        const mappings = await db.pdfFieldMapping.findMany({
-          where: { settingsId: settings.id },
-        });
         pdfBuffer = await generatePDFFromTemplate(
-          settings.pdfTemplateFile,
+          product.pdfConfig.pdfTemplateFile,
           fields,
-          mappings
+          product.pdfConfig.fieldMappings
         );
-      } else {
+      } else if (product.pdfConfig?.pdfTemplate) {
+        // Use per-product text template
         pdfBuffer = await generatePDF(
           { fields, imageUrl: imageField?.value },
-          settings?.pdfTemplate || undefined
+          product.pdfConfig.pdfTemplate
+        );
+      } else {
+        // Fallback: generic PDF with all fields
+        pdfBuffer = await generatePDF(
+          { fields, imageUrl: imageField?.value },
+          undefined
         );
       }
 

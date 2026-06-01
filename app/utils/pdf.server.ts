@@ -177,7 +177,7 @@ export async function generatePDFFromTemplate(
             embeddedImage = await pdfDoc.embedJpg(imgBytes);
           }
           const width = mapping.maxWidth || 150;
-          const height = mapping.maxWidth ? (width * 0.75) : 150;
+          const height = (mapping as any).imageHeight || (mapping.maxWidth ? (width * 0.75) : 112);
           page.drawImage(embeddedImage, {
             x: mapping.x,
             y: mapping.y,

@@ -27,14 +27,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const prismaMappings = mappings.map((m: any) => ({
       id: m.id || "",
-      settingsId: "",
+      configId: "",
       fieldLabel: m.fieldLabel,
+      fieldType: m.fieldType || "text",
       x: Number(m.x) || 0,
       y: Number(m.y) || 0,
       fontSize: Number(m.fontSize) || 12,
       fontColor: m.fontColor || "#000000",
       fontFamily: m.fontFamily || "Helvetica",
       maxWidth: m.maxWidth ? Number(m.maxWidth) : null,
+      imageHeight: m.imageHeight ? Number(m.imageHeight) : null,
       page: Number(m.page) || 0,
     }));
 

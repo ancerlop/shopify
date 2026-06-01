@@ -29,22 +29,23 @@ model Session {
 }
 
 model Store {
-  id              String   @id @default(cuid())
-  myshopifyDomain String   @unique
+  id              String         @id @default(cuid())
+  myshopifyDomain String         @unique
   accessToken     String
-  createdAt       DateTime @default(now())
+  createdAt       DateTime       @default(now())
   products        Product[]
   settings        StoreSettings?
   orders          Order[]
 }
 
 model Product {
-  id        String      @id @default(cuid())
+  id        String            @id @default(cuid())
   storeId   String
-  store     Store       @relation(fields: [storeId], references: [id])
+  store     Store             @relation(fields: [storeId], references: [id])
   shopifyId String
   fields    FormField[]
-  createdAt DateTime    @default(now())
+  pdfConfig ProductPdfConfig?
+  createdAt DateTime          @default(now())
 
   @@unique([storeId, shopifyId])
 }
@@ -62,32 +63,40 @@ model FormField {
 }
 
 model StoreSettings {
+  id           String @id @default(cuid())
+  storeId      String @unique
+  store        Store  @relation(fields: [storeId], references: [id])
+  emailFrom    String?
+  emailSubject String?
+  emailBody    String?
+}
+
+model ProductPdfConfig {
   id              String            @id @default(cuid())
-  storeId         String            @unique
-  store           Store             @relation(fields: [storeId], references: [id])
+  productId       String            @unique
+  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   pdfTemplate     String?
   pdfTemplateFile Bytes?
   pdfTemplateName String?
-  emailFrom       String?
-  emailSubject    String?
-  emailBody       String?
   fieldMappings   PdfFieldMapping[]
 }
 
 model PdfFieldMapping {
-  id         String        @id @default(cuid())
-  settingsId String
-  settings   StoreSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
-  fieldLabel String
-  x          Float
-  y          Float
-  fontSize   Float         @default(14)
-  fontColor  String        @default("#000000")
-  fontFamily String        @default("Helvetica")
-  maxWidth   Float?
-  page       Int           @default(0)
+  id          String           @id @default(cuid())
+  configId    String
+  config      ProductPdfConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  fieldLabel  String
+  fieldType   String           @default("text")
+  x           Float
+  y           Float
+  fontSize    Float            @default(14)
+  fontColor   String           @default("#000000")
+  fontFamily  String           @default("Helvetica")
+  maxWidth    Float?
+  imageHeight Float?
+  page        Int              @default(0)
 
-  @@unique([settingsId, fieldLabel])
+  @@unique([configId, fieldLabel])
 }
 
 model Order {

@@ -30,25 +30,42 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       },
       include: {
         fields: { orderBy: { sortOrder: "asc" } },
+        pdfConfig: {
+          include: { fieldMappings: true },
+        },
       },
     });
 
     if (!product) {
       console.error(`[form-config] No product found for shopifyId=${shopifyId} storeId=${store.id}`);
-      const allProducts = await db.product.findMany({ where: { storeId: store.id } });
-      console.log(`[form-config] Products in DB: ${JSON.stringify(allProducts.map(p => p.shopifyId))}`);
       return { fields: [] };
     }
 
     console.log(`[form-config] Found product with ${product.fields.length} fields`);
 
+    const mappings = product.pdfConfig?.fieldMappings || [];
+
     return {
-      fields: product.fields.map((f) => ({
-        label: f.label,
-        type: f.type,
-        required: f.required,
-        sortOrder: f.sortOrder,
-      })),
+      fields: product.fields.map((f) => {
+        const mapping = mappings.find((m) => m.fieldLabel === f.label);
+        
+        // Calculate max characters based on maxWidth and fontSize for text fields
+        // A rough estimate: average character width is ~0.6 * fontSize
+        // If imageHeight is defined, we can calculate lines too, but for simplicity
+        // we'll pass the raw limits to the frontend to handle or display.
+        
+        return {
+          label: f.label,
+          type: f.type,
+          required: f.required,
+          sortOrder: f.sortOrder,
+          limits: mapping ? {
+            maxWidth: mapping.maxWidth,
+            imageHeight: mapping.imageHeight,
+            fontSize: mapping.fontSize,
+          } : null,
+        };
+      }),
     };
   } catch (err) {
     console.error("[form-config] Error:", err);
