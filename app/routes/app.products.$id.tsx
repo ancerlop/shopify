@@ -37,7 +37,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         pdfTemplate: product.pdfConfig.pdfTemplate,
         pdfTemplateName: product.pdfConfig.pdfTemplateName,
         pdfTemplateFileBase64: product.pdfConfig.pdfTemplateFile
-          ? product.pdfConfig.pdfTemplateFile.toString("base64")
+          ? Buffer.from(product.pdfConfig.pdfTemplateFile).toString("base64")
           : null,
         fieldMappings: product.pdfConfig.fieldMappings.map((fm) => ({
           id: fm.id,
