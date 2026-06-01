@@ -176,13 +176,22 @@ export async function generatePDFFromTemplate(
           } else {
             embeddedImage = await pdfDoc.embedJpg(imgBytes);
           }
-          const width = mapping.maxWidth || 150;
-          const height = (mapping as any).imageHeight || (mapping.maxWidth ? (width * 0.75) : 112);
+          
+          const boxWidth = mapping.maxWidth || 150;
+          const boxHeight = (mapping as any).imageHeight || (mapping.maxWidth ? (boxWidth * 0.75) : 112);
+          
+          // Escalar proporcionalmente para que quepa en la caja sin deformarse
+          const dims = embeddedImage.scaleToFit(boxWidth, boxHeight);
+          
+          // Centrar la imagen dentro de la caja definida
+          const xOffset = (boxWidth - dims.width) / 2;
+          const yOffset = (boxHeight - dims.height) / 2;
+
           page.drawImage(embeddedImage, {
-            x: mapping.x,
-            y: mapping.y,
-            width,
-            height,
+            x: mapping.x + xOffset,
+            y: mapping.y + yOffset,
+            width: dims.width,
+            height: dims.height,
           });
         } catch (imgErr) {
           console.error("Error embedding image in PDF:", imgErr);

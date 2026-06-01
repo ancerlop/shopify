@@ -10,7 +10,16 @@ const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
-    await authenticate.public.appProxy(request);
+    let authContext;
+    try {
+      authContext = await authenticate.public.appProxy(request);
+    } catch (authError) {
+      console.error("[upload-action] Proxy auth error:", authError);
+      return new Response(JSON.stringify({ error: "Unauthorized proxy request" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const { filename, type, base64 } = await request.json() as {
       filename?: string;
@@ -19,17 +28,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
 
     if (!base64 || !filename || !type) {
-      return { error: "No file provided or incorrect payload format" };
+      return new Response(JSON.stringify({ error: "No file provided or incorrect payload format" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     if (!ALLOWED_MIME_TYPES.includes(type)) {
-      return { error: "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed." };
+      return new Response(JSON.stringify({ error: "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const buffer = Buffer.from(base64, "base64");
 
     if (buffer.length > MAX_FILE_SIZE) {
-      return { error: "File too large. Maximum size is 5MB." };
+      return new Response(JSON.stringify({ error: "File too large. Maximum size is 5MB." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const ext = filename.split(".").pop() || "jpg";
@@ -40,10 +58,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const filePath = join(uploadDir, savedFilename);
     await writeFile(filePath, buffer);
 
-    return { url: `/uploads/${savedFilename}` };
+    return new Response(JSON.stringify({ url: `/uploads/${savedFilename}` }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     console.error("[upload-action] Error:", err);
-    return { error: "Failed to upload: " + (err.message || String(err)) };
+    return new Response(JSON.stringify({ error: "Failed to upload: " + (err.message || String(err)) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
 
