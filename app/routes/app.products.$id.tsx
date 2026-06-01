@@ -289,6 +289,27 @@ export default function ProductConfig() {
 
   return (
     <s-page heading={data.shopifyProduct?.title || "Configurar producto"}>
+      {/* ===== ADD FIELD ===== */}
+      <s-section heading="Añadir campo">
+        <fetcher.Form method="post">
+          <input type="hidden" name="intent" value="add-field" />
+          <s-stack direction="block" gap="base">
+            <s-text-field label="Nombre del campo" name="label" placeholder="Ej: Nombre de la víctima" required />
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "500", color: "#202223" }}>Tipo de campo</label>
+              <select name="type" required style={selectStyle}>
+                {FIELD_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <s-checkbox label="Campo obligatorio" name="required" value="true" />
+            <s-text-field label="Orden" name="sortOrder" value={String(data.product.fields.length)} />
+            <button type="submit" style={primaryBtnStyle}>Añadir campo</button>
+          </s-stack>
+        </fetcher.Form>
+      </s-section>
+
       {/* ===== FORM FIELDS SECTION ===== */}
       <s-section heading="Campos del formulario">
         <s-paragraph>
@@ -329,27 +350,6 @@ export default function ProductConfig() {
             </tbody>
           </table>
         )}
-      </s-section>
-
-      {/* ===== ADD FIELD ===== */}
-      <s-section heading="Añadir campo">
-        <fetcher.Form method="post">
-          <input type="hidden" name="intent" value="add-field" />
-          <s-stack direction="block" gap="base">
-            <s-text-field label="Nombre del campo" name="label" placeholder="Ej: Nombre de la víctima" required />
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "500", color: "#202223" }}>Tipo de campo</label>
-              <select name="type" required style={selectStyle}>
-                {FIELD_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </div>
-            <s-checkbox label="Campo obligatorio" name="required" value="true" />
-            <s-text-field label="Orden" name="sortOrder" value={String(data.product.fields.length)} />
-            <button type="submit" style={primaryBtnStyle}>Añadir campo</button>
-          </s-stack>
-        </fetcher.Form>
       </s-section>
 
       {/* ===== PDF TEMPLATE SECTION ===== */}
